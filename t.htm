@@ -1,0 +1,38 @@
+<!doctype html>
+<canvas id=c></canvas>
+<script>
+(function() {
+    var oldTime=new Date()
+    var xp=0
+    var yp=50
+    var angle=0
+
+
+    function l(){
+        var delta = new Date() - oldTime
+        x=c.getContext('2d')
+        x.beginPath()
+        x.arc(0,0,20,0,6)
+        x.fillStyle = "red";
+        x.fill()
+
+
+
+        angle = (angle+0.1)%(Math.PI*2)
+        var nxp = xp * Math.cos(angle) - xy * Math.sin(angle)
+        var nyp = Ax * Math.sin(angle) + Ay * Math.cos(angle)
+
+        x.closePath()
+        x.beginPath()
+        x.arc(nxp,nyp,5,0,6)
+        x.fillStyle = "black";
+        x.fill()
+        oldTime = new Date()
+
+
+        requestAnimationFrame(l)
+    }
+    l()
+
+})()
+</script>
