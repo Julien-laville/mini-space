@@ -196,7 +196,8 @@ g = function(x,player,planets){
             
             x.restore()
             
-            t.innerHTML = "thrust : " + player.thrust
+            var relativeSpeed = new v2d(player.speed.x,player.speed.y)
+            t.innerHTML = "thrust : " + player.thrust //+ "|speed : " + relativeSpeed.sub(player.attratedBy.speed).norm()
         }
     }
     player.toString = function() {
@@ -285,17 +286,16 @@ g = function(x,player,planets){
         //context.globalCompositeOperation = "source-over"
         
         // draw prograde 
-        
-        
+    
         // retrograde
-        var r = 10//player.acc
+        /*
+        var playerAccHeading = Math.atan2(player.acc.y,player.acc.x) 
+        var r = (player.acc - sheepH).m(2*Math.PI) / (Math.PI * 2) * 200 
+        context.fillStyle = "#FFFFFF"
         context.fillRect(c.width/2-5,c.height - r,10,10)
-                
-
        
         context.fillStyle = "#ffffff"
-
-        
+            */
         for(var i = 0;i<20;i++){
             // trace angle
                 context.fillRect(c.width/2 - 5,c.height - (20 * i) - h + 200,10,1)   
@@ -319,8 +319,8 @@ g = function(x,player,planets){
     }
     
     document.onmouseup = function() {
-        if(manover == 1) {
-            manover = 3
+        if(manover == 2) {
+            manover = 0
         }
     }
     
@@ -328,26 +328,21 @@ g = function(x,player,planets){
         
         if(manover==1) {
             o = new v2d(mousePos.x, mousePos.y)
-            context.moveTo(o.x,o.y)
-            context.arc(o.x,o.y,3,0,7)
-            context.fillStyle = "white"
-            context.fill()
-        }
-        else if(manover==2) {
-            context.moveTo(o.x,o.y)
-            context.arc(o.x,o.y,3,0,7)
-            context.fillStyle = "white"
-            context.fill()
+            manover = 2
             
+        } else if(manover==2) {
+            manover = 2
+            context.moveTo(o.x,o.y)
+            context.arc(o.x+1,o.y+1,2,0,7)
+            context.fillStyle = "white"
+            context.fill()
             context.strokeStyle = "white"
             context.lineTo(mousePos.x,mousePos.y)
             context.stroke()
-            
-            
-        }
-        else if(manover==3) {
+            console.log(manover)
             
         }
+        
             
     }
     
@@ -411,8 +406,8 @@ g = function(x,player,planets){
     c.width=innerWidth-8;c.height=innerHeight-8
     planets=[]
     camera = player
-	planets[0]=new Planet(0.001,500,null,3000,0,0,20, 'blue')
-	planets[1]=new Planet(0.0024,250,null,6000,0,0,8, 'red')
+	planets[0]=new Planet(0.0004,800,null,9000,0,0,20, 'blue')
+	planets[1]=new Planet(0.0003,250,null,16000,0,0,8, 'red')
     player.link(planets[0])
     prepareStar()
     
@@ -421,7 +416,7 @@ g = function(x,player,planets){
         oldDate = new Date()
         c.width^=0
         navBall(x)
-        drawStars(x)
+       // drawStars(x)
         drawManover(x)
         player.controll(delta)
         
@@ -429,13 +424,13 @@ g = function(x,player,planets){
             planet.move(delta)
         })
         
-        player.move(delta)
+       // player.move(delta)
                 
         planets.forEach(function(planet) {
-            planet.draw(x)
+        //    planet.draw(x)
         })
-        trajectory(x)
-        player.draw(x)     
+        //trajectory(x)
+        //player.draw(x)     
         drawSun(x)
         requestAnimationFrame(l)
     }
@@ -461,6 +456,10 @@ function Planet(speed,diameter,parent,distanceMinFromParent,distanceMaxFromParen
     this.angle=angle
     this.pos=new v2d(Math.cos(this.angle)*this.distanceMinFromParent,Math.sin(this.angle)*this.distanceMinFromParent)
     this.name=name    
+}
+    
+Planet.prototype.getSpeedVector = function() {
+    
 }
     
     
@@ -495,7 +494,7 @@ Planet.prototype.getFuturePosition=function(delta){
 
 function drawSun(x) {
     x.beginPath()
-    x.arc(c.width/2-z(camera.pos.x),c.height/2-z(camera.pos.y),z(100),0,7)
+    x.arc(c.width/2-z(camera.pos.x),c.height/2-z(camera.pos.y),z(1000),0,7)
     x.fillStyle = "orange";
     x.fill()
     x.closePath()
