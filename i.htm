@@ -7,7 +7,8 @@
 <script>
     
     function displayCrash() {
-        
+        console.log("crash !")
+
     }
     
     function displayMission() {
@@ -26,20 +27,37 @@ mousePos = new v2d(0,0)
 
 Number.prototype.m = function(n){return((this%n)+n)%n;}
 
+var vPool=[]
+for(var i = 0;i < 200; i++) {
+    vPool[i]=new v2d(0,0) 
+}
+
 function v2d(x,y) {
     this.x = x
     this.y = y
+    this.tmp = 1;//for buff & swap
 }
-        
+    
+    v2d.prototype.setPoint = function(x,y) {
+        this.x = x
+        this.y = y
+    }
+     
+    
+    v2d.prototype.setVector = function(v) {
+        this.x = v.x
+        this.y = v.y
+    }
     
 v2d.prototype.X = function(o){
     this.x=this.x*o.x;
     this.y=this.y*o.y;
 }
 
-v2d.prototype.gravity = function(a) {
-    var norm = this.stance(a)
-    return new v2d((this.x - a.x) / norm,(this.y - a.y) / norm)
+v2d.prototype.normalize = function() {
+    this.tmp = this.x;
+    this.x  = this.x / Math.hypot(this.x,this.y)
+    this.y = this.y / Math.hypot(this.tmp,this.y)
 }
 
 v2d.prototype.add = function(o){
@@ -78,15 +96,39 @@ v2d.prototype.norm = function() {
     return Math.hypot(this.x,this.y)
 }
 
+manover = {
+    origin : new v2d(0,0),
+    deltaV : new v2d(0,0),
+    state : 0
+}
+
 oldDate = new Date();
 nz = 10
-sun = {pos : new v2d(0,0), stance: 0, name : 'sun', G : 50}
+sun = {pos : new v2d(0,0), stance: 0, name : 'sun', G : 18000}
 stars = []
 g = function(x,player,planets){  
     
 
     player = {
+        gravity : {
+            normamizedGravity : new v2d(0,0),
+            moveVector : new v2d(0,0)
+        },
         
+        trajectory : {
+            stanceCurrent : new v2d(0,0),
+            posCurrent : new v2d(0,0),
+            normamizedGravity : new v2d(0,0),
+            pos : new v2d(0,0),
+            speed : new v2d(0,0),
+            acc : new v2d(0,0),
+            force : 0,
+            forceCurrent : 0,    
+            attratedBy : sun,
+            attratedByCurrent : sun,
+            futurePlanetStance : new v2d(0,0),
+            moveVector : new v2d(0,0)
+        },
         pos : new v2d(200,200),
         heading:Math.PI/2,
         agility:Math.PI/45,
@@ -97,8 +139,10 @@ g = function(x,player,planets){
         mass : 1,
         left:false,
         thrustUp:false,
+        
         linkedTo:null,
         attratedBy:null,
+        
         stages:[
             {isOn:false, power:1.3, isCurrent:true}
         ],
@@ -106,13 +150,9 @@ g = function(x,player,planets){
         thrust : 0,
         move : function(delta){
             
-            //collision
-            
-            
+            //landed
             if(player.linkedTo){
-                //landed
-                player.pos.x=player.linkedTo.pos.x
-                player.pos.y=player.linkedTo.pos.y+player.linkedTo.diameter
+                player.pos.setPoint(player.linkedTo.pos.x,player.linkedTo.pos.y+player.linkedTo.diameter)
             } else {
                 
                 //collide
@@ -124,15 +164,10 @@ g = function(x,player,planets){
                         var choc = player.speed.norm() // approx energy     
                         if(choc >= 0) {
                             displayCrash()
-                            console.log("crash with e: ",choc)
                         } 
                     }
                 })
-                    
-                    
-                
-                //orbital mechanic
-                
+                                    
                 //gravity well                
                 sun.stance = sun.pos.stance(player.pos)
                 
@@ -147,28 +182,36 @@ g = function(x,player,planets){
                     }
                 })
                 
-                var gravityV = player.attratedBy.pos.gravity(player.pos)
+                
+                                
+                player.gravity.normamizedGravity.setVector(player.attratedBy.pos)
+                
+                player.gravity.normamizedGravity.sub(player.pos)
+                
+                player.gravity.normamizedGravity.normalize()
+                
+                player.gravity.normamizedGravity.scale(g)
+                
+                
                 
                 //atmoshperic
-                
-                
                 
                 //engine
                 if(player.stages[0].isOn) {
                 
-                    player.acc = new v2d(Math.cos(player.heading)*player.stages[0].power*player.thrust, 
+                    player.acc.setPoint(Math.cos(player.heading)*player.stages[0].power*player.thrust, 
                                          Math.sin(player.heading)*player.stages[0].power*player.thrust)
-                    
-                    console.log(player.acc)
-                    player.acc.add(gravityV)        
-                    player.speed.add(player.acc)
-                    
-                    
-                    var ss = new v2d(player.speed.x, player.speed.y)
-                    ss.scale(0.16)
-                    
-                    player.pos.add(ss)
                 }
+                                
+                player.acc.add(player.gravity.normamizedGravity)        
+                player.speed.add(player.acc)
+
+
+                player.gravity.moveVector.setVector(player.speed)
+                player.gravity.moveVector.scale(0.16)
+
+                player.pos.add(player.gravity.moveVector)
+                
             } 
         },
         
@@ -183,6 +226,7 @@ g = function(x,player,planets){
                 player.stages[0].isOn = true
                 console.log("Start engine")
                 player.linkedTo = false
+                player.speed.setPoint(0,0)
         },  
         
         draw : function(x) {
@@ -212,50 +256,84 @@ g = function(x,player,planets){
     }
     
 
-    function getNearFuturePlanetPos(futureObect,futureTime) {
-        var sunStance = sun.pos.stance(futureObect)
-        var g = sun.G / (sunStance * sunStance)
-        var nearFuturePlanetPos = sun.pos
-
+    function computeGravity(futureObect,futureTime) {
+        player.trajectory.stance = player.trajectory.attratedBy.pos.stance(futureObect)
+        player.trajectory.force = player.trajectory.attratedBy.G / (player.trajectory.stance * player.trajectory.stance)
+        
         planets.forEach(function(planet) {
-            futurePlanetPos = planet.getFuturePosition(futureTime)
-            planet.stance = planet.pos.stance(futureObect)    
-            if((planet.G / (planet.stance * planet.stance)) > g) {
-                g = planet.G / (planet.stance * planet.stance)
-                nearFuturePlanetPos = futurePlanetPos
-                
+            var stanceZ = planet.getFuturePosition(futureTime).stance(futureObect)
+            var forceZ = planet.G / (stanceZ * stanceZ)
+            if(player.trajectory.force < forceZ) {
+                document.title = planet.name 
+                player.trajectory.force = forceZ
+                player.trajectory.attratedBy = planet
             }
         })
-        return nearFuturePlanetPos
+        
+            stanceZ = futureObect.stance(sun.pos)
+
+            forceZ = sun.G / (stanceZ * stanceZ)
+            if(player.trajectory.force < forceZ) {
+                document.title = sun.name 
+                player.trajectory.force = forceZ
+                player.trajectory.attratedBy = sun
+            }
+        
+        //return player.future.planet
     }
     
-    function trajectory(context) {
-        var poss = new v2d(player.pos.x,player.pos.y)
-        var speeds = new v2d(player.speed.x,player.speed.y)
-        var accs = new v2d(player.acc.x,player.acc.y)
-        var attratedBy = sun;
-        //player only at this moment 
+    function trajectory(context, deltaV) {
+        player.trajectory.pos.setVector(player.pos)
+        player.trajectory.speed.setVector(player.speed)
         // 200 should be enought
-        for(var i=0;i<800;i++) {
+        var step = 100
+        var breakFlag = false
+        for(var i=0;i<200;i++) {
+            if(breakFlag) {
+                break;
+            }
+            
             
             // new acc
-            accs = new v2d(0,0)
-             
-            //get gravity weel
-            var planetPos = getNearFuturePlanetPos(poss, i*0.16)
-
-            //get gravity vector    
-            var gravityV = planetPos.gravity(poss)
+            player.trajectory.acc.setPoint(0,0)
+       
+            computeGravity(player.trajectory.pos, i*0.16*step)
+            player.trajectory.normamizedGravity.setVector(player.trajectory.attratedBy.pos)
+            player.trajectory.normamizedGravity.sub(player.trajectory.pos)
+            player.trajectory.normamizedGravity.normalize()
+            
+        
+            player.trajectory.normamizedGravity.scale(player.trajectory.force * step)
                             
-            speeds.add(gravityV)
+            player.trajectory.speed.add(player.trajectory.normamizedGravity)
             
             // console.log(planet)
-            var ss = new v2d(speeds.x,speeds.y)
-            ss.scale(0.16)
-            poss.add(ss)
+            player.trajectory.moveVector.setVector(player.trajectory.speed)
+            player.trajectory.moveVector.scale(0.16*step)
+
+            
+            player.trajectory.pos.add(player.trajectory.moveVector)
+            
+
+            var dist = Math.hypot(player.pos.x-player.trajectory.pos.x, player.pos.y-player.trajectory.pos.y)
+            if(dist < 100 && dist != 0) {
+                // detect loop
+                breakFlag = true
+            }
+            planets.forEach(function(planet){
+                    
+                    if(player.trajectory.pos.stance(planet.pos) < planet.diameter / 2) {
+                        // collide 
+                        // go get energy !
+                        if(i > 10) {
+                            breakFlag = true
+                        }
+                    }
+                })
+
             
             context.fillStyle  = '#E8E476'
-            context.fillRect(c.width/2+z(poss.x-camera.pos.x+4),c.height/2+z(poss.y-camera.pos.y-5),1,2)            
+            context.fillRect(c.width/2+z(player.trajectory.pos.x-camera.pos.x+4),c.height/2+z(player.trajectory.pos.y-camera.pos.y-5),1,2)            
         }
     }
     
@@ -313,34 +391,33 @@ g = function(x,player,planets){
     
     document.onmousedown = function(e) {
         
-        if(manover == 0) {
-            manover = 1
+        if(manover.state == 0) {
+            manover.state = 1
         }        
     }
     
     document.onmouseup = function() {
-        if(manover == 2) {
-            manover = 0
+        if(manover.state == 2) {
+            manover.state = 0
         }
     }
     
     function drawManover(context) {
         
-        if(manover==1) {
-            o = new v2d(mousePos.x, mousePos.y)
-            manover = 2
-            
-        } else if(manover==2) {
-            manover = 2
-            context.moveTo(o.x,o.y)
-            context.arc(o.x+1,o.y+1,2,0,7)
+        if(manover.state==1) {
+            manover.origin.setVector(mousePos)
+            manover.state = 2
+        } else if(manover.state==2) {
+            manover.state = 2
+            context.moveTo(manover.origin.x,manover.origin.y)
+            context.arc(manover.origin.x+1,manover.origin.y+1,2,0,7)
             context.fillStyle = "white"
             context.fill()
             context.strokeStyle = "white"
             context.lineTo(mousePos.x,mousePos.y)
             context.stroke()
-            console.log(manover)
-            
+            manover.deltaV.setVector(mousePos)
+            manover.deltaV.sub(manover.origin)
         }
         
             
@@ -401,13 +478,12 @@ g = function(x,player,planets){
 
     
     
-    manover = 0
     x=c.getContext('2d')
     c.width=innerWidth-8;c.height=innerHeight-8
     planets=[]
     camera = player
-	planets[0]=new Planet(0.0004,800,null,9000,0,0,20, 'blue')
-	planets[1]=new Planet(0.0003,250,null,16000,0,0,8, 'red')
+	planets[0]=new Planet(0.000,800,null,9000,0,0,20000, 'blue')
+	planets[1]=new Planet(0.000,250,null,16000,0,0,8000, 'red')
     player.link(planets[0])
     prepareStar()
     
@@ -416,7 +492,7 @@ g = function(x,player,planets){
         oldDate = new Date()
         c.width^=0
         navBall(x)
-       // drawStars(x)
+        drawStars(x)
         drawManover(x)
         player.controll(delta)
         
@@ -424,13 +500,13 @@ g = function(x,player,planets){
             planet.move(delta)
         })
         
-       // player.move(delta)
+        player.move(delta)
                 
         planets.forEach(function(planet) {
-        //    planet.draw(x)
+            planet.draw(x)
         })
-        //trajectory(x)
-        //player.draw(x)     
+        trajectory(x)
+        player.draw(x)     
         drawSun(x)
         requestAnimationFrame(l)
     }
