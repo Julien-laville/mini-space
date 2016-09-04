@@ -29,7 +29,7 @@ Number.prototype.m = function(n){return((this%n)+n)%n;}
 
 var vPool=[]
 for(var i = 0;i < 200; i++) {
-    vPool[i]=new v2d(0,0) 
+    vPool[i]=new v2d(0,0)
 }
 
 function v2d(x,y) {
@@ -96,26 +96,35 @@ v2d.prototype.norm = function() {
     return Math.hypot(this.x,this.y)
 }
 
-manover = {
-    origin : new v2d(0,0),
-    deltaV : new v2d(0,0),
-    state : 0
-}
-
 oldDate = new Date();
 nz = 10
-sun = {pos : new v2d(0,0), stance: 0, name : 'sun', G : 18000}
+sun = {pos : new v2d(0,0), stance: 0, name : 'sun', G : 18000, color : "#ffffff"}
 stars = []
 g = function(x,player,planets){  
     
-
+    tools = {
+        mouse : new v2d(0,0),
+        cam : new v2d(0,0),
+        screen : new v2d(c.width/2,c.height/2),    
+    },
+    manover = {
+        nearPoint : new v2d(0,0),
+        minStance : 0,
+        stance : 0,
+        origin : new v2d(0,0),
+        deltaV : new v2d(0,0),
+        state : 0
+    },  
+    
     player = {
         gravity : {
             normamizedGravity : new v2d(0,0),
             moveVector : new v2d(0,0)
         },
-        
+            
         trajectory : {
+            apo : new v2d(0,0),
+            peri : new v2d(0,0),
             stanceCurrent : new v2d(0,0),
             posCurrent : new v2d(0,0),
             normamizedGravity : new v2d(0,0),
@@ -238,10 +247,17 @@ g = function(x,player,planets){
             x.rotate(player.heading)
             x.fillRect(z(-10),z(-5),z(20),z(10))//
             
+             x.fillStyle = "rgba(250,250,250,0.3)"
+
+            for(var i = 0; i < 10; i++) {
+                x.fillRect(c.width/2+z(player.pos.x- camera.pos.x)+z(5+ Math.random() * 10) ,c.height/2+z(player.pos.y- camera.pos.y)+z(10 + Math.random() * 10), z(10), z(10))
+            }
+            
             x.restore()
             
             var relativeSpeed = new v2d(player.speed.x,player.speed.y)
-            t.innerHTML = "thrust : " + player.thrust //+ "|speed : " + relativeSpeed.sub(player.attratedBy.speed).norm()
+            t.innerHTML = "thrust : " + player.thrust + "|speed : " + player.speed.norm()
+           
         }
     }
     player.toString = function() {
@@ -264,7 +280,6 @@ g = function(x,player,planets){
             var stanceZ = planet.getFuturePosition(futureTime).stance(futureObect)
             var forceZ = planet.G / (stanceZ * stanceZ)
             if(player.trajectory.force < forceZ) {
-                document.title = planet.name 
                 player.trajectory.force = forceZ
                 player.trajectory.attratedBy = planet
             }
@@ -274,7 +289,6 @@ g = function(x,player,planets){
 
             forceZ = sun.G / (stanceZ * stanceZ)
             if(player.trajectory.force < forceZ) {
-                document.title = sun.name 
                 player.trajectory.force = forceZ
                 player.trajectory.attratedBy = sun
             }
@@ -282,9 +296,12 @@ g = function(x,player,planets){
         //return player.future.planet
     }
     
+    
+    
     function trajectory(context, deltaV) {
         player.trajectory.pos.setVector(player.pos)
         player.trajectory.speed.setVector(player.speed)
+        player.trajectory.attratedByCurrent = player.attratedBy
         // 200 should be enought
         var step = 100
         var breakFlag = false
@@ -304,6 +321,7 @@ g = function(x,player,planets){
             
         
             player.trajectory.normamizedGravity.scale(player.trajectory.force * step)
+            
                             
             player.trajectory.speed.add(player.trajectory.normamizedGravity)
             
@@ -314,7 +332,10 @@ g = function(x,player,planets){
             
             player.trajectory.pos.add(player.trajectory.moveVector)
             
-
+            // for apo / peri
+            vPool[i].setVector(player.trajectory.pos)
+            vPool[i].tmp = player.trajectory.force
+            
             var dist = Math.hypot(player.pos.x-player.trajectory.pos.x, player.pos.y-player.trajectory.pos.y)
             if(dist < 100 && dist != 0) {
                 // detect loop
@@ -330,18 +351,38 @@ g = function(x,player,planets){
                         }
                     }
                 })
-
             
-            context.fillStyle  = '#E8E476'
-            context.fillRect(c.width/2+z(player.trajectory.pos.x-camera.pos.x+4),c.height/2+z(player.trajectory.pos.y-camera.pos.y-5),1,2)            
+            
+            // update color of trajectory if influence change
+            context.fillStyle  = player.attratedBy.color
+            if(player.trajectory.attratedByCurrent != player.trajectory.attratedBy) {
+                player.trajectory.attratedByCurrent = player.trajectory.attratedBy
+                context.fillStyle  = player.trajectory.attratedBy.color
+            }
+            
+            context.fillRect(c.width/2+z(player.trajectory.pos.x-camera.pos.x+4),c.height/2+z(player.trajectory.pos.y-camera.pos.y-5),2,2)            
         }
+        player.trajectory.apo = vPool[0]
+        player.trajectory.peri = vPool[0]
+        vPool.forEach(function(vp) {
+            if(player.trajectory.apo.tmp > vp.tmp) {
+                player.trajectory.apo = vp
+            }
+            if(player.trajectory.peri.tmp < vp.tmp) {
+                player.trajectory.peri = vp
+            }
+        })
+        // get apo and peri
+        context.fillStyle = "#FFE659"
+        context.fillRect(c.width/2+z(player.trajectory.peri.x-camera.pos.x+4),c.height/2+z(player.trajectory.peri.y-camera.pos.y-5),4,4)            
+        context.fillStyle = "#FFE600"
+        context.fillRect(c.width/2+z(player.trajectory.apo.x-camera.pos.x+4),c.height/2+z(player.trajectory.apo.y-camera.pos.y-5),4,4)            
+
+        
     }
     
     function navBall(context){
    
-        
-    
-        
         var a1 = new v2d(player.attratedBy.pos.x, player.attratedBy.pos.y)
         a1.sub(player.pos)
         var sheepH = Math.atan2(a1.y,a1.x) + Math.PI 
@@ -362,18 +403,19 @@ g = function(x,player,planets){
         
         //console.log(h)
         //context.globalCompositeOperation = "source-over"
+
         
-        // draw prograde 
-    
-        // retrograde
-        /*
-        var playerAccHeading = Math.atan2(player.acc.y,player.acc.x) 
-        var r = (player.acc - sheepH).m(2*Math.PI) / (Math.PI * 2) * 200 
+        var playerAccHeading = Math.atan2(player.speed.y,player.speed.x) 
+        var r = player.heading - playerAccHeading + Math.PI / 2
+        
         context.fillStyle = "#FFFFFF"
+        r = r.m(2*Math.PI) / (Math.PI * 2) * 200
         context.fillRect(c.width/2-5,c.height - r,10,10)
+        context.fillStyle = "#FF0000"
+        context.fillRect(c.width/2-5,c.height - (r + 100).m(200),10,10)
        
         context.fillStyle = "#ffffff"
-            */
+            
         for(var i = 0;i<20;i++){
             // trace angle
                 context.fillRect(c.width/2 - 5,c.height - (20 * i) - h + 200,10,1)   
@@ -402,15 +444,40 @@ g = function(x,player,planets){
         }
     }
     
+    function mouseToSpace() {
+        tools.mouse.setVector(mousePos)
+        tools.mouse.sub(tools.screen)
+        tools.cam.setVector(camera.pos)
+        tools.mouse.scale((1/nz)*10)
+        tools.mouse.add(tools.cam)
+        document.title = tools.mouse
+    }
+    
+    
     function drawManover(context) {
         
         if(manover.state==1) {
-            manover.origin.setVector(mousePos)
+            //get neareast point on trajectory
+           mouseToSpace()
+            //vMouse.sub(vCam)
+           // vMouse.sub(vCam)
+            manover.nearPoint.setVector(vPool[0])
+            manover.minStance = vPool[0].stance(tools.mouse)
+            vPool.forEach(function(vp) {
+                manover.stance = vp.stance(tools.mouse)
+                if(manover.minStance > manover.stance) {
+                    manover.minStance = manover.stance
+                    manover.nearPoint.setVector(vp)
+                }
+            })
+
+            
+            manover.origin.setVector(manover.nearPoint)
             manover.state = 2
         } else if(manover.state==2) {
             manover.state = 2
-            context.moveTo(manover.origin.x,manover.origin.y)
-            context.arc(manover.origin.x+1,manover.origin.y+1,2,0,7)
+            context.moveTo(c.width/2+z(manover.nearPoint.x-camera.pos.x+4),c.height/2+z(manover.nearPoint.y-camera.pos.y-5))
+            context.arc(c.width/2+z(manover.nearPoint.x-camera.pos.x+4),c.height/2+z(manover.nearPoint.y-camera.pos.y-5),4,0,7)
             context.fillStyle = "white"
             context.fill()
             context.strokeStyle = "white"
@@ -418,9 +485,7 @@ g = function(x,player,planets){
             context.stroke()
             manover.deltaV.setVector(mousePos)
             manover.deltaV.sub(manover.origin)
-        }
-        
-            
+        }            
     }
     
     document.onkeydown=function(k) {
@@ -482,8 +547,8 @@ g = function(x,player,planets){
     c.width=innerWidth-8;c.height=innerHeight-8
     planets=[]
     camera = player
-	planets[0]=new Planet(0.000,800,null,9000,0,0,20000, 'blue')
-	planets[1]=new Planet(0.000,250,null,16000,0,0,8000, 'red')
+	planets[0]=new Planet(0.000,800,null,9000,0,0,20000, 'blue', '#0000FF')
+	planets[1]=new Planet(0.000,250,null,16000,0,0,8000, 'red', '#FF0000')
     player.link(planets[0])
     prepareStar()
     
@@ -522,9 +587,10 @@ g = function(x,player,planets){
 	r ressources
 	D distance from origin
 */
-function Planet(speed,diameter,parent,distanceMinFromParent,distanceMaxFromParent,angle,G,name){
+function Planet(speed,diameter,parent,distanceMinFromParent,distanceMaxFromParent,angle,G,name, color){
     this.speed=speed
     this.stance = 0
+    this.color = color
     this.G = G
     this.distanceMaxFromParent = distanceMaxFromParent  
     this.distanceMinFromParent = distanceMinFromParent
