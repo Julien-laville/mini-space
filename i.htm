@@ -29,7 +29,12 @@ Number.prototype.m = function(n){return((this%n)+n)%n;}
 
 var vPool=[]
 for(var i = 0;i < 200; i++) {
-    vPool[i]=new v2d(0,0)
+    vPool[i]={
+        speed : new v2d(0,0),
+        f : 0,
+        pos : new v2d()
+        
+    }
 }
 
 function v2d(x,y) {
@@ -108,7 +113,7 @@ g = function(x,player,planets){
         screen : new v2d(c.width/2,c.height/2),    
     },
     manover = {
-        nearPoint : new v2d(0,0),
+        nearPoint : null,
         minStance : 0,
         stance : 0,
         origin : new v2d(0,0),
@@ -298,9 +303,15 @@ g = function(x,player,planets){
     
     
     
-    function trajectory(context, deltaV) {
-        player.trajectory.pos.setVector(player.pos)
-        player.trajectory.speed.setVector(player.speed)
+    function trajectory(context, deltaV, nearPoint) {
+        if(nearPoint) {
+            context.fillRect(c.width/2+z(nearPoint.pos.x-camera.pos.x+4),c.height/2+z(nearPoint.pos.y-camera.pos.y-5),8,8)            
+            player.trajectory.pos.setVector(nearPoint.pos)
+            player.trajectory.speed.setVector(deltaV)
+        } else {
+            player.trajectory.pos.setVector(player.pos)
+            player.trajectory.speed.setVector(player.speed)
+        }
         player.trajectory.attratedByCurrent = player.attratedBy
         // 200 should be enought
         var step = 100
@@ -333,9 +344,9 @@ g = function(x,player,planets){
             player.trajectory.pos.add(player.trajectory.moveVector)
             
             // for apo / peri
-            vPool[i].setVector(player.trajectory.pos)
-            vPool[i].tmp = player.trajectory.force
-            
+            vPool[i].pos.setVector(player.trajectory.pos)
+            vPool[i].force = player.trajectory.force
+            vPool[i].speed.setVector(player.trajectory.speed)     
             var dist = Math.hypot(player.pos.x-player.trajectory.pos.x, player.pos.y-player.trajectory.pos.y)
             if(dist < 100 && dist != 0) {
                 // detect loop
@@ -359,17 +370,19 @@ g = function(x,player,planets){
                 player.trajectory.attratedByCurrent = player.trajectory.attratedBy
                 context.fillStyle  = player.trajectory.attratedBy.color
             }
-            
+            if(nearPoint) {
+                context.fillStyle = 'red'
+            }
             context.fillRect(c.width/2+z(player.trajectory.pos.x-camera.pos.x+4),c.height/2+z(player.trajectory.pos.y-camera.pos.y-5),2,2)            
         }
-        player.trajectory.apo = vPool[0]
-        player.trajectory.peri = vPool[0]
+        player.trajectory.apo = vPool[0].pos
+        player.trajectory.peri = vPool[0].pos
         vPool.forEach(function(vp) {
             if(player.trajectory.apo.tmp > vp.tmp) {
-                player.trajectory.apo = vp
+                player.trajectory.apo = vp.pos
             }
             if(player.trajectory.peri.tmp < vp.tmp) {
-                player.trajectory.peri = vp
+                player.trajectory.peri = vp.pos
             }
         })
         // get apo and peri
@@ -435,12 +448,15 @@ g = function(x,player,planets){
         
         if(manover.state == 0) {
             manover.state = 1
-        }        
+        }       
+        if(manover.state == 3) {
+            manover.state = 0
+        }
     }
     
     document.onmouseup = function() {
         if(manover.state == 2) {
-            manover.state = 0
+            manover.state = 3
         }
     }
     
@@ -463,23 +479,21 @@ g = function(x,player,planets){
            mouseToSpace()
             //vMouse.sub(vCam)
            // vMouse.sub(vCam)
-            manover.nearPoint.setVector(vPool[0])
-            manover.minStance = vPool[0].stance(tools.mouse)
+            manover.nearPoint = vPool[0]
+            manover.minStance = vPool[0].pos.stance(tools.mouse)
             vPool.forEach(function(vp) {
-                manover.stance = vp.stance(tools.cam)
+                manover.stance = vp.pos.stance(tools.cam)
                 if(manover.minStance > manover.stance) {
                     manover.minStance = manover.stance
-                    manover.nearPoint.setVector(vp)
+                    manover.nearPoint = vp
+                    manover.origin.setVector(mousePos)
                 }
             })
-
-            
-            manover.origin.setVector(manover.nearPoint)
             manover.state = 2
         } else if(manover.state==2) {
             manover.state = 2
-            context.moveTo(c.width/2+z(manover.nearPoint.x-camera.pos.x+4),c.height/2+z(manover.nearPoint.y-camera.pos.y-5))
-            context.arc(c.width/2+z(manover.nearPoint.x-camera.pos.x+4),c.height/2+z(manover.nearPoint.y-camera.pos.y-5),4,0,7)
+            context.moveTo(c.width/2+z(manover.nearPoint.pos.x-camera.pos.x+4),c.height/2+z(manover.nearPoint.pos.y-camera.pos.y-5))
+            context.arc(c.width/2+z(manover.nearPoint.pos.x-camera.pos.x+4),c.height/2+z(manover.nearPoint.pos.y-camera.pos.y-5),4,0,7)
             context.fillStyle = "white"
             context.fill()
             context.strokeStyle = "white"
@@ -487,7 +501,13 @@ g = function(x,player,planets){
             context.stroke()
             manover.deltaV.setVector(mousePos)
             manover.deltaV.sub(manover.origin)
-        }            
+            manover.deltaV.add(manover.nearPoint.speed)
+            trajectory(context, manover.deltaV, manover.nearPoint)
+            document.title = manover.nearPoint.pos
+        } else if(manover.state==3) {
+            trajectory(context, manover.deltaV, manover.nearPoint)
+            //draw alternateManover
+        }
     }
     
     document.onkeydown=function(k) {
