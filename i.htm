@@ -260,24 +260,22 @@ g = function(x,player,planets){
         draw : function(x) {
             
             //x.beginPath();
-            x.fillStyle = "red"
             x.save()
-            x.translate((c.width/2+z(player.pos.x- camera.pos.x))+z((5)) ,(c.height/2+z(player.pos.y- camera.pos.y)+z(10)))
-            x.rotate(player.heading)
+            x.translate((c.width/2+z(player.pos.x- camera.pos.x + 25)) ,(c.height/2+z(player.pos.y- camera.pos.y + 104)))
+            x.rotate(player.heading+Math.PI/2)
           
             //drawImage(image, sx, sy, sLargeur, sHauteur, dx, dy, dLargeur, dHauteur)
-            if(z){ // simple rocket
-                x.drawImage(sprite, 174,74,50,208, 0,0,z(50), z(207))
+        /*    if(z){ // simple rocket
+                x.drawImage(sprite, 174,74,50,208, 0,0,z(25), z(100))
             } else { //real rocket
-                x.drawImage(sprite, 174,74,50,208, 0,0,z(50), z(207))
+                x.drawImage(sprite, 174,74,50,208, 0,0,z(25), z(100))
             }
-            x.drawImage(sprite, 174,74,50,208, 0,0,z(50), z(207))
+            */
+            x.drawImage(sprite, 174,74,50,208, z(-25),z(-104),z(50), z(208))
             
             x.fillStyle = "rgba(250,250,250,0.3)"
 
-            for(var i = 0; i < 10; i++) {
-                x.fillRect(c.width/2+z(player.pos.x- camera.pos.x)+z(5+ Math.random() * 10) ,c.height/2+z(player.pos.y- camera.pos.y)+z(10 + Math.random() * 10), z(10), z(10))
-            }
+           
             
             x.restore()
             
@@ -704,25 +702,26 @@ Planet.prototype.draw=function(context){
         context.arc(c.width/2+z(this.pos.x - camera.pos.x),c.height/2+z(this.pos.y - camera.pos.y),z(this.diameter),0,7)
         // TODO sure ?        context.strokeStyle = '#2A2D2E'
         context.closePath()
-        context.stroke()
         
+        var shadowGrd = context.createLinearGradient(c.width/2+z(this.pos.x - camera.pos.x - this.diameter/2), 0, c.width/2+z(this.pos.x - camera.pos.x + this.diameter/2), 0);
+      
+        // Add colors
+        shadowGrd.addColorStop(0.000, 'rgba(0, 0, 0, 0.400)');
+        shadowGrd.addColorStop(0.352, 'rgba(0, 0, 0, 0.400)');
+        shadowGrd.addColorStop(0.652, 'rgba(0, 0, 0, 0.000)');
+        shadowGrd.addColorStop(1.000, 'rgba(0, 0, 0, 0.000)');
+        
+        context.fillStyle = shadowGrd;
         
         // dark
         context.beginPath()
 
-        context.arc(c.width/2+z(this.shadowPos.x - camera.pos.x),c.height/2+z(this.shadowPos.y - camera.pos.y), z(this.diameter), 0, 7)
-        context.fillStyle = "#333";
-        
-        context.fill()
-        
-        context.save()
         context.arc(c.width/2+z(this.pos.x - camera.pos.x),c.height/2+z(this.pos.y - camera.pos.y),z(this.diameter),0,7)
-        context.globalCompositeOperation = "xor"
-        context.fill()
-
+        //context.fillStyle = "#333";
         
-        context.restore()
-        context.closePath()
+        context.fill()
+        
+        //context.closePath()
 
 
     }
