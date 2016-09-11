@@ -117,21 +117,21 @@ g = function(x,player,planets){
     }
     
     land = function(planet, choc) {
-        j.innerHTML = "<h1 color='red'>Plant da flag</h1>" +
+        j.innerHTML = "<h1 color='red'>Successfull landed on " + player.attratedBy.name + "</h1>" +
 
         logs.map(function(l){
-            return l.date + l.m 
+            return "at " +l.date.getTime() + " " + l.m 
         }).join('<br>')
         state = 3
     }
     
     displayCrash = function () {
-        j.innerHTML = "<h1 color='red'>!!!!</h1>" +
+        j.innerHTML = "<h1 color='red'>Rocket is lost</h1>" +
         
             
         
         logs.map(function(l){
-            return l.date + l.m 
+            return "at " +l.date.getTime() + " " + l.m 
         }).join('<br>')
         state = 3
     }
@@ -159,7 +159,7 @@ g = function(x,player,planets){
     },  
     
     player = {
-        fuel : 100,
+        fuel : 100000,
         alt: 0,
         gravity : {
             normamizedGravity : new v2d(0,0),
@@ -182,6 +182,8 @@ g = function(x,player,planets){
             futurePlanetStance : new v2d(0,0),
             moveVector : new v2d(0,0)
         },
+        pdv : new v2d(0,0),
+        pdvs : "",
         pos : new v2d(200,200),
         heading:-Math.PI/2,
         agility:Math.PI/45,
@@ -213,7 +215,6 @@ g = function(x,player,planets){
             grd.addColorStop(0.000, `rgba(17, 65, 117, ${atmoAlpha})`);
             grd.addColorStop(1.000, `rgba(255, 141, 66, ${atmoAlpha})`);
             
-            document.title = atmoAlpha
             
             context.fillStyle = grd
             context.fillRect(0,0,c.width,c.height)
@@ -222,17 +223,17 @@ g = function(x,player,planets){
             
             //landed
             if(player.linkedTo){
-                player.pos.setPoint(player.linkedTo.pos.x,player.linkedTo.pos.y-player.linkedTo.diameter)
+                player.pos.setPoint(player.linkedTo.pos.x,player.linkedTo.pos.y-player.linkedTo.diameter-104)
             } else {
                 //collide
                 planets.forEach(function(planet){
                     
-                    if(player.pos.stance(planet.pos) < planet.diameter) {
+                    if(player.pos.stance(planet.pos) < planet.diameter + 104) {
                         // collide 
                         // go get energy !
                         var choc = player.speed.norm() // approx energy     
-                        if(choc >= 0.2) {
-                            log("Crash with " + planet.name + " at " + choc + "m/s")
+                        if(choc >= 10) {
+                            log("Collide with " + planet.name + " | velocity  " + choc + "m/s")
                             displayCrash()
                         } else {
                             land()
@@ -269,10 +270,16 @@ g = function(x,player,planets){
                 //atmoshperic
                 
                 //engine
-                if(player.stages[0].isOn) {
                 
+                player.fuel -= player.thrust * delta
+                document.title = "fuel : "+player.fuel
+
+
+                if(player.stages[0].isOn && player.fuel > 0) {
+                    
                     player.acc.setPoint(Math.cos(player.heading)*player.stages[0].power*player.thrust / 10, 
                                          Math.sin(player.heading)*player.stages[0].power*player.thrust / 10)
+                    
                 }
                                 
                 player.acc.add(player.gravity.normamizedGravity)        
@@ -300,12 +307,23 @@ g = function(x,player,planets){
                 console.log("Start engine")
                 player.linkedTo = false
                 player.speed.setPoint(0,0)
-                log("Stage")
+                log("Take off")
         },  
         
         draw : function(x) {
+            player.pdvs = ''
             
-            t.innerHTML = pdv + "<br>|speed : " + Math.round(player.speed.norm()) + "<br>|alt : " + Math.round(player.alt)
+            if(manover.state != 0) {
+                player.pdv.setVector(player.speed)
+                player.pdv.sub(manover.initialDeltaV) 
+                player.pdvs = "|dv : " + Math.round(player.pdv .norm())
+            }
+            
+            
+            
+            
+            
+            t.innerHTML = player.pdvs + "<br>|speed : " + Math.round(player.speed.norm()) + "<br>|alt : " + Math.round(player.alt)
             
             if(nz < 1) {
                 x.drawImage(sprite, 111,183,50,50, c.width/2-25,c.height/2-25,50, 50)
@@ -314,28 +332,17 @@ g = function(x,player,planets){
             
             //x.beginPath();
             x.save()
-            x.translate((c.width/2+z(player.pos.x- camera.pos.x)) ,(c.height/2+z(player.pos.y - camera.pos.y - 104)))
+            x.translate((c.width/2+z(player.pos.x- camera.pos.x)) ,(c.height/2+z(player.pos.y - camera.pos.y)))
             x.rotate(player.heading+Math.PI/2)
           
-            //drawImage(image, sx, sy, sLargeur, sHauteur, dx, dy, dLargeur, dHauteur)
-        /*    if(z){ // simple rocket
-                x.drawImage(sprite, 174,74,50,208, 0,0,z(25), z(100))
-            } else { //real rocket
-                x.drawImage(sprite, 174,74,50,208, 0,0,z(25), z(100))
-            }
-            */
+         
             x.drawImage(sprite, 174,74,50,208, z(-25),z(-104),z(50), z(208))
             
             x.fillStyle = "rgba(250,250,250,0.3)"
             x.restore()
             
             var relativeSpeed = new v2d(player.speed.x,player.speed.y)
-            var pdv = ""
-            if(manover.state != 0) {
-                pdv = new v2d(player.speed.x, player.speed.y)
-                pdv.sub(manover.initialDeltaV) 
-                                pdv = "|dv : " + pdv .norm()
-            }
+           
            
         }
     }
@@ -347,8 +354,8 @@ g = function(x,player,planets){
         if(player.thrustUp&&!player.thrustDown) player.thrust = player.thrust >= 1 ? 1 : player.thrust+0.025    
         if(player.thrustDown&&!player.thrustUp) player.thrust = player.thrust <= 0 ? 0 : player.thrust-0.025
         if(player.stages[0].isOn) {
-            if(player.left&&!player.right) player.heading = player.heading+player.agility 
-            if(player.right&&!player.left) player.heading = player.heading-player.agility    
+            if(player.left&&!player.right) player.heading = player.heading-player.agility 
+            if(player.right&&!player.left) player.heading = player.heading+player.agility    
         }
         if(player.thrust!=0 || player.left || player.right) {
             mats = 1
@@ -514,14 +521,19 @@ g = function(x,player,planets){
         
         context.fillStyle = "#FFFFFF"
         r = r.m(2*Math.PI) / (Math.PI * 2) * 200
-        context.fillRect(c.width/2-5,c.height - r,10,10)
+        
+        context.drawImage(sprite, 45,135,10,10,c.width/2-5,c.height - r,10,10)
+        context.drawImage(sprite, 60,135,10,11,c.width/2-5,c.height - (r + 100).m(200),10,11)
+
+        //context.fillRect(c.width/2-5,c.height - r,10,10)
         context.fillStyle = "#FF0000"
-        context.fillRect(c.width/2-5,c.height - (r + 100).m(200),10,10)
+//      context.fillRect(c.width/2-5,c.height - (r + 100).m(200),10,10)
        
         context.fillStyle = "#ffffff"
             
         for(var i = 0;i<20;i++){
             // trace angle
+
                 context.fillRect(c.width/2 - 5,c.height - (20 * i) - h + 200,10,1)   
                 context.fillRect(c.width/2 - 2,c.height - (20 * i + 10) - h + 200,4,1)   
         }
@@ -534,8 +546,8 @@ g = function(x,player,planets){
 
             context.fillStyle = "#C390D4"
             d = d.m(2*Math.PI) / (Math.PI * 2) * 200
-            context.fillRect(c.width/2-5,c.height - d,10,10)
-            
+            context.drawImage(sprite, 77,135,10,10,c.width/2-5,c.height - d,10,10)
+
         }
             
         context.restore()
@@ -747,9 +759,9 @@ g = function(x,player,planets){
                 planet.draw(x)
             })
             trajectory(x)
+            drawSun(x)
             navBall(x)
             player.draw(x)     
-            drawSun(x)
         }
         requestAnimationFrame(l)
     }
@@ -995,18 +1007,8 @@ function z(d){
         
         // Fill with gradient
         context3.fillStyle=skyDrg;
-        context3.fillRect(0,0,d.width,d.height);
-                
-        
-        
-        
+        context3.fillRect(0,0,d.width,d.height);        
     }
-   
-
-            
-         
-            
-
 
 
 
