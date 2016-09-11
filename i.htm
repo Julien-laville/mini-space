@@ -2,7 +2,7 @@
 <canvas id=d style="position:absolute;top:0"></canvas>
 <canvas id=c style="position:absolute;top:0"></canvas>
 <span id=t style="position:absolute;color:white; bottom:15px;font-family:monospace"></span>
-
+<div id=matsI style="color:#fff;position:absolute;top:0"><i id=mats_1>&#x25B6;</i><i id=mats_2>&#x25B7;</i><i id=mats_3>&#x25B7;</i><i id=mats_4>&#x25B7;</i><i id=mats_5>&#x25B7;</i><i id=matsL>1 x</i></div>
 <div id=m style="position:absolute;text-align:center;color:#FFF;font-size:40px;top:40vh;width:100vw;font-family:monospace">Start</div>
 <div id=j style="position:absolute;margin-left:10vw;color:#FFF;font-size:20px;top:40vh;width:80vw;font-family:monospace"></div>
 
@@ -97,13 +97,14 @@ v2d.prototype.norm = function() {
 
 oldDate = new Date();
 nz = 4
-sun = {pos : new v2d(0,0), stance: 0, name : 'sun', G : 18000, color : "#ffffff"}
+sun = {pos : new v2d(0,0), stance: 0, name : 'sun', G : 440000, color : "#ffffff", diameter : 10000}
 stars = []
 starsU = []
 sky = {
     pos : new v2d(0,0)
 }
 g = function(x,player,planets){  
+    mats = 1
     logs = []
     function log(m) {
         logs.push({date : new Date(), m})
@@ -114,7 +115,15 @@ g = function(x,player,planets){
         glitchCharge : 0,
         precision : 30,    
     }
-        
+    
+    land = function(planet, choc) {
+        j.innerHTML = "<h1 color='red'>Plant da flag</h1>" +
+
+        logs.map(function(l){
+            return l.date + l.m 
+        }).join('<br>')
+        state = 3
+    }
     
     displayCrash = function () {
         j.innerHTML = "<h1 color='red'>!!!!</h1>" +
@@ -150,6 +159,7 @@ g = function(x,player,planets){
     },  
     
     player = {
+        fuel : 100,
         alt: 0,
         gravity : {
             normamizedGravity : new v2d(0,0),
@@ -191,6 +201,23 @@ g = function(x,player,planets){
         ],
         thrustDown:false,
         thrust : 0,
+        
+        drawSky : function (context) {
+            if(player.alt > 1500) return
+            
+            player.alt = this.pos.stance(this.attratedBy.pos) - this.attratedBy.diameter
+            grd = context.createLinearGradient(150.000, 0.000, 150.000, 300.000);
+            var atmoAlpha = player.alt < 1 ? 1 : 1 - player.alt / 1500
+            
+      // Add colors
+            grd.addColorStop(0.000, `rgba(17, 65, 117, ${atmoAlpha})`);
+            grd.addColorStop(1.000, `rgba(255, 141, 66, ${atmoAlpha})`);
+            
+            document.title = atmoAlpha
+            
+            context.fillStyle = grd
+            context.fillRect(0,0,c.width,c.height)
+        },
         move : function(delta){
             
             //landed
@@ -200,14 +227,16 @@ g = function(x,player,planets){
                 //collide
                 planets.forEach(function(planet){
                     
-                    if(player.pos.stance(planet.pos) < planet.diameter / 2) {
+                    if(player.pos.stance(planet.pos) < planet.diameter) {
                         // collide 
                         // go get energy !
                         var choc = player.speed.norm() // approx energy     
-                        if(choc >= 0) {
-                            log("Crash with " + planet.name + " at " + player.speed.norm() + "m/s")
+                        if(choc >= 0.2) {
+                            log("Crash with " + planet.name + " at " + choc + "m/s")
                             displayCrash()
-                        } 
+                        } else {
+                            land()
+                        }
                     }
                 })
                                     
@@ -249,9 +278,10 @@ g = function(x,player,planets){
                 player.acc.add(player.gravity.normamizedGravity)        
                 player.speed.add(player.acc)
 
-
+                    
                 player.gravity.moveVector.setVector(player.speed)
-                player.gravity.moveVector.scale(0.16)
+                player.gravity.moveVector.scale(delta / 100)
+                //player.gravity.moveVector.scale(0.16)
 
                 player.pos.add(player.gravity.moveVector)
                 
@@ -275,7 +305,6 @@ g = function(x,player,planets){
         
         draw : function(x) {
             
-            player.alt = player.attratedBy.pos.stance(player.pos)
             t.innerHTML = pdv + "<br>|speed : " + Math.round(player.speed.norm()) + "<br>|alt : " + Math.round(player.alt)
             
             if(nz < 1) {
@@ -298,9 +327,6 @@ g = function(x,player,planets){
             x.drawImage(sprite, 174,74,50,208, z(-25),z(-104),z(50), z(208))
             
             x.fillStyle = "rgba(250,250,250,0.3)"
-
-           
-            
             x.restore()
             
             var relativeSpeed = new v2d(player.speed.x,player.speed.y)
@@ -323,6 +349,9 @@ g = function(x,player,planets){
         if(player.stages[0].isOn) {
             if(player.left&&!player.right) player.heading = player.heading+player.agility 
             if(player.right&&!player.left) player.heading = player.heading-player.agility    
+        }
+        if(player.thrust!=0 || player.left || player.right) {
+            mats = 1
         }
     }
     
@@ -350,10 +379,8 @@ g = function(x,player,planets){
         
         //return player.future.planet
     }
-    
-    
-    
-    function trajectory(context, deltaV, nearPoint) {
+        
+    function trajectory(context,deltaV,nearPoint) {
         if(nearPoint) {
             context.fillRect(c.width/2+z(nearPoint.x-camera.pos.x+4),c.height/2+z(nearPoint.y-camera.pos.y-5),8,8)            
             player.trajectory.pos.setVector(nearPoint)
@@ -388,6 +415,7 @@ g = function(x,player,planets){
             
             // console.log(planet)
             player.trajectory.moveVector.setVector(player.trajectory.speed)
+            //player.trajectory.moveVector.scale(16)
             player.trajectory.moveVector.scale(0.16*step)
 
             
@@ -535,6 +563,29 @@ g = function(x,player,planets){
           
     }
     
+    matsI.onclick = function(e) {
+        if(state != 1) return
+        
+        var selected = parseInt(e.target.id.split('_')[1])
+        for(var i=1; i <= 5; i++) {
+            document.getElementById(`mats_${i}`).innerHTML = i <= selected ? '&#x25B6;' :'&#x25B7;'
+        }
+        switch(selected) {
+            case 1:
+                mats = 1
+                break
+            case 2:
+                mats = 2
+                break
+            default:
+                mats = Math.pow(10,selected-2)
+                
+        }   
+        matsL.innerHTML = `${mats} x` 
+        return false
+        e.preventDefault()
+    }
+    
     document.onmousedown = function(e) {
         
         if(manover.state == 0 && state == 1) {
@@ -616,20 +667,30 @@ g = function(x,player,planets){
             player.right = true 
         }
         // zoom on o & p
-        if(k.keyCode == 79) {
+        if(k.keyCode == 34) {
             nz = nz <= 0 ? 0 : nz / 2
         }
         
-        if(k.keyCode == 80) {
+        if(k.keyCode == 33) {
             nz = nz >= 1000 ? 1000 : nz * 2
         }
         if(k.keyCode == 32) {
-            player.stage()
+            if(!player.stages[0].isOn)
+                player.stage()
+        }
+        
+        if(state == 1 && k.keyCode == 80) {
+            pause()
+            state = 4//PAUSE
+        } else if(state == 4 && k.keyCode == 80) {
+            state = 1
+            unpause()
         }
     }
     
-    document.onmousewheel = function() {
-        
+    document.scroll = function(e) {
+        var d = e.wheelDelta
+        console.log(d   )
     }
     
     
@@ -661,17 +722,19 @@ g = function(x,player,planets){
     d.width=c.width=innerWidth-8;d.height=c.height=innerHeight-8
     planets=[]
     camera = player
-	planets[0]=new Planet(0.000,1800,null,19000,0,0,20000, 'blue', '#0000FF')
-	planets[1]=new Planet(0.000,1250,null,116000,0,0,8000, 'red', '#FF0000')
+	planets[0]=new Planet(0.000,3800,null,40000,0,0,200000, 'blue', '#0000FF')
+	planets[1]=new Planet(0.000,3250,null,116000,0,0,80000, 'red', '#FF0000')
     player.link(planets[0])
     prepareStar()
     
     function l(){
         delta = new Date()-oldDate;
+        delta *= mats
         oldDate = new Date()
         c.width^=0
         if(state==1) { // game
             drawUnstableStars(x)
+            player.drawSky(x)
             drawManover(x)
             player.controll(delta)
             planets.forEach(function(planet) {
@@ -691,7 +754,6 @@ g = function(x,player,planets){
         requestAnimationFrame(l)
     }
     drawStars(x2)
-
     l()
 }
 /*
@@ -705,15 +767,24 @@ g = function(x,player,planets){
 	D distance from origin
 */
 m.onclick = start
+j.onclick = stop
 function start() {
     m.style.display = "none"
     state = 1
 }
-    j.onclick = stop
 function stop() {
     j.style.display = "none"
     state = 1;
+}  
+    
+function pause() {
+    m.style.display = "inline"
+    m.innerHTML = "Paused"
 }    
+function unpause() {
+    m.style.display = "none"
+    m.innerHTML = ""
+}     
 
 function Planet(speed,diameter,parent,distanceMinFromParent,distanceMaxFromParent,angle,G,name, color){
     this.speed=speed
@@ -740,7 +811,11 @@ Planet.prototype.toString=function(){
     
 
 Planet.prototype.drawSimple = function(context) {
-    context.drawImage(sprite, 168,20,40,40,c.width/2+z(this.pos.x - camera.pos.x),c.height/2+z(this.pos.y - camera.pos.y),40,40)
+    if(this.name === 'blue') {
+        context.drawImage(sprite, 168,20,40,40,c.width/2+z(this.pos.x - camera.pos.x),c.height/2+z(this.pos.y - camera.pos.y),40,40)
+    } else {
+        context.drawImage(sprite, 30,79,40,40,c.width/2+z(this.pos.x - camera.pos.x),c.height/2+z(this.pos.y - camera.pos.y),40,40)
+    }
 }
 
 Planet.prototype.draw=function(context){
@@ -762,7 +837,7 @@ Planet.prototype.draw=function(context){
             skyDrg.addColorStop(1.000, 'rgba(114, 195, 249, 1.000)');
 
         } else {
-            var skyDrg=context.createLinearGradient(0, c.height/2+z(this.pos.y - camera.pos.y - this.diameter/2), 0, c.height/2+z(this.pos.y - camera.pos.y + this.diameter/2));
+            var skyDrg=context.createLinearGradient(0, c.height/2+z(this.pos.y - camera.pos.y - this.diameter/2), 0, c.height   /2+z(this.pos.y - camera.pos.y + this.diameter/2));
 
       
       // Add colors
@@ -836,10 +911,10 @@ function drawSun(x) {
         
          
         x.beginPath()
-     var skyDrg=x.createRadialGradient(sky.pos.x,sky.pos.y,10,sky.pos.x,sky.pos.y,z(1000));
+     var skyDrg=x.createRadialGradient(sky.pos.x,sky.pos.y,10,sky.pos.x,sky.pos.y,z(sun.diameter));
         
-    skyDrg.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)');
-    skyDrg.addColorStop(0.236, 'rgba(255, 224, 132, 1.000)');
+        skyDrg.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)');
+        skyDrg.addColorStop(0.236, 'rgba(255, 224, 132, 1.000)');
       skyDrg.addColorStop(0.488, 'rgba(234, 189, 12, 1.000)');
       skyDrg.addColorStop(0.735, 'rgba(255, 120, 17, 1.000)');
       skyDrg.addColorStop(0.994, 'rgba(255, 131, 73, 1.000)');
@@ -848,7 +923,7 @@ function drawSun(x) {
     // Fill with gradient
     x.fillStyle=skyDrg;
     
-    x.arc(c.width/2-z(camera.pos.x),c.height/2-z(camera.pos.y),z(1000),0,7)
+    x.arc(c.width/2-z(camera.pos.x),c.height/2-z(camera.pos.y),z(sun.diameter),0,7)
     x.fill()
     x.closePath()
     }
@@ -895,6 +970,7 @@ function z(d){
             starsU.push({pos : new v2d(Math.random() * c.width,Math.random() * c.height), color : colors[Math.floor(Math.random()*5)],intensity: Math.random()*0.9})
         }
     }
+    
     
     
     function drawUnstableStars(context3){
