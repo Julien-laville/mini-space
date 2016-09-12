@@ -17,12 +17,15 @@ missions = [
     'soyouz'
 ]
 
+PHYSIC_STEP = 10
+POOL_SIZE = 400
+
 mousePos = new v2d(0,0)
 
 Number.prototype.m = function(n){return((this%n)+n)%n;}
 
 var vPool=[]
-for(var i = 0;i < 200; i++) {
+for(var i = 0;i < POOL_SIZE; i++) {
     vPool[i]={
         speed : new v2d(0,0),
         f : 0,
@@ -272,7 +275,7 @@ g = function(x,player,planets){
                 //engine
                 
                 player.fuel -= player.thrust * delta
-                document.title = "fuel : "+player.fuel
+               // document.title = "fuel : "+player.fuel
 
 
                 if(player.stages[0].isOn && player.fuel > 0) {
@@ -282,12 +285,13 @@ g = function(x,player,planets){
                     
                 }
                                 
-                player.acc.add(player.gravity.normamizedGravity)        
+                player.acc.add(player.gravity.normamizedGravity)     
+                player.acc.scale(delta)
                 player.speed.add(player.acc)
 
                     
                 player.gravity.moveVector.setVector(player.speed)
-                player.gravity.moveVector.scale(delta / 100)
+                player.gravity.moveVector.scale(delta)
                 //player.gravity.moveVector.scale(0.16)
 
                 player.pos.add(player.gravity.moveVector)
@@ -318,10 +322,6 @@ g = function(x,player,planets){
                 player.pdv.sub(manover.initialDeltaV) 
                 player.pdvs = "|dv : " + Math.round(player.pdv .norm())
             }
-            
-            
-            
-            
             
             t.innerHTML = player.pdvs + "<br>|speed : " + Math.round(player.speed.norm()) + "<br>|alt : " + Math.round(player.alt)
             
@@ -387,7 +387,8 @@ g = function(x,player,planets){
         //return player.future.planet
     }
         
-    function trajectory(context,deltaV,nearPoint) {
+    function trajectory(context,deltaT,deltaV,nearPoint) {
+        deltaT *= mats 
         if(nearPoint) {
             context.fillRect(c.width/2+z(nearPoint.x-camera.pos.x+4),c.height/2+z(nearPoint.y-camera.pos.y-5),8,8)            
             player.trajectory.pos.setVector(nearPoint)
@@ -397,25 +398,26 @@ g = function(x,player,planets){
             player.trajectory.speed.setVector(player.speed)
         }
         player.trajectory.attratedByCurrent = player.attratedBy
-        // 200 should be enought
         var step = 100
         var breakFlag = false
-        for(var i=0;i<200;i++) {
+        for(var i=0;i<POOL_SIZE;i++) {
             if(breakFlag) {
                 break;
             }
             
             
             // new acc
-            player.trajectory.acc.setPoint(0,0)
+            player.trajectory.acc.setVector(player.acc)
        
-            computeGravity(player.trajectory.pos, i*0.16*step)
+            computeGravity(player.trajectory.pos, i*deltaT)
             player.trajectory.normamizedGravity.setVector(player.trajectory.attratedBy.pos)
             player.trajectory.normamizedGravity.sub(player.trajectory.pos)
             player.trajectory.normamizedGravity.normalize()
             
+            player.trajectory.normamizedGravity.scale(deltaT)
+            
         
-            player.trajectory.normamizedGravity.scale(player.trajectory.force * step)
+            player.trajectory.normamizedGravity.scale(player.trajectory.force)
             
                             
             player.trajectory.speed.add(player.trajectory.normamizedGravity)
@@ -423,7 +425,7 @@ g = function(x,player,planets){
             // console.log(planet)
             player.trajectory.moveVector.setVector(player.trajectory.speed)
             //player.trajectory.moveVector.scale(16)
-            player.trajectory.moveVector.scale(0.16*step)
+            player.trajectory.moveVector.scale(deltaT)
 
             
             player.trajectory.pos.add(player.trajectory.moveVector)
@@ -435,20 +437,18 @@ g = function(x,player,planets){
             var dist = Math.hypot(player.pos.x-player.trajectory.pos.x, player.pos.y-player.trajectory.pos.y)
             if(dist < 100 && dist != 0) {
                 // detect loop
-               // breakFlag = true
+                breakFlag = true
             }
             planets.forEach(function(planet){
                     
                     if(player.trajectory.pos.stance(planet.pos) < planet.diameter / 2) {
                         // collide 
                         // go get energy !
-                        if(i > 10) {
+                        if(i > PHYSIC_STEP) {
                             breakFlag = true
                         }
                     }
                 })
-            
-            
             // update color of trajectory if influence change
             context.fillStyle  = "#78CBFF"//player.attratedBy.color
             if(player.trajectory.attratedByCurrent != player.trajectory.attratedBy) {
@@ -626,7 +626,7 @@ g = function(x,player,planets){
     }
     
     
-    function drawManover(context) {
+    function drawManover(context,deltaT) {
         
         if(manover.state==1) {
             //get neareast point on trajectory
@@ -657,9 +657,9 @@ g = function(x,player,planets){
             //manover.deltaV.sub(manover.nearPoint.speed)
             manover.fixedPoint.setVector(manover.nearPoint.pos)
             manover.initialDeltaV.setVector(manover.nearPoint.speed)
-            trajectory(context, manover.deltaV, manover.nearPoint.pos)
+            trajectory(context,deltaT,manover.deltaV, manover.nearPoint.pos)
         } else if(manover.state==3) {
-            trajectory(context, manover.deltaV, manover.fixedPoint)
+            trajectory(context,deltaT,manover.deltaV, manover.fixedPoint)
             //draw alternateManover
         }
     }
@@ -739,29 +739,45 @@ g = function(x,player,planets){
     player.link(planets[0])
     prepareStar()
     
+    var timer = new Date()
+    //constant time for move
+    function m(){
+        var timer = new Date() 
+        
+        delta = PHYSIC_STEP
+        delta *= mats 
+        if(state==1) { // game
+            player.controll(delta)
+            player.move(delta)
+            planets.forEach(function(planet) {
+                planet.move(delta)
+            })
+        }
+
+
+        timer = new Date() - timer
+        //document.title = timer
+
+    }
+    
+    setInterval(m,PHYSIC_STEP)
+    
     function l(){
-        delta = new Date()-oldDate;
-        delta *= mats
-        oldDate = new Date()
         c.width^=0
         if(state==1) { // game
             drawUnstableStars(x)
             player.drawSky(x)
-            drawManover(x)
-            player.controll(delta)
-            planets.forEach(function(planet) {
-                planet.move(delta)
-            })
-
-            player.move(delta)
+           
 
             planets.forEach(function(planet) {
                 planet.draw(x)
             })
-            trajectory(x)
+            
             drawSun(x)
+            player.draw(x)   
             navBall(x)
-            player.draw(x)     
+            trajectory(x,delta)
+            drawManover(x,delta)
         }
         requestAnimationFrame(l)
     }
@@ -960,9 +976,10 @@ function z(d){
             s = stars[si]
             context2.moveTo(s.pos.x,s.pos.y)
 
-            context2.fillStyle = '#aaaaaa'
             //context2.moveTo(s.pos.x,s.pos.y)
+            context2.fillStyle = '#aaaaaa'
             context2.arc(s.pos.x,s.pos.y, s.intensity,0,7)
+           
                         
             context2.fill()
         }
