@@ -437,7 +437,7 @@ g = function(x,player,planets){
             var dist = Math.hypot(player.pos.x-player.trajectory.pos.x, player.pos.y-player.trajectory.pos.y)
             if(dist < 100 && dist != 0) {
                 // detect loop
-                breakFlag = true
+                //breakFlag = true
             }
             planets.forEach(function(planet){
                     
@@ -522,8 +522,8 @@ g = function(x,player,planets){
         context.fillStyle = "#FFFFFF"
         r = r.m(2*Math.PI) / (Math.PI * 2) * 200
         
-        context.drawImage(sprite, 45,135,10,10,c.width/2-5,c.height - r,10,10)
-        context.drawImage(sprite, 60,135,10,11,c.width/2-5,c.height - (r + 100).m(200),10,11)
+        context.drawImage(sprite, 43,132,15,15,c.width/2-8,c.height - r - 8,15,15)
+        context.drawImage(sprite, 73,132,15,15,c.width/2-8,c.height - (r + 100 - 8).m(200),15,15)
 
         //context.fillRect(c.width/2-5,c.height - r,10,10)
         context.fillStyle = "#FF0000"
@@ -546,7 +546,7 @@ g = function(x,player,planets){
 
             context.fillStyle = "#C390D4"
             d = d.m(2*Math.PI) / (Math.PI * 2) * 200
-            context.drawImage(sprite, 77,135,10,10,c.width/2-5,c.height - d,10,10)
+            context.drawImage(sprite, 103,132,15,15,c.width/2-8,c.height - d - 8,15,15)
 
         }
             
