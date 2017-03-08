@@ -193,21 +193,7 @@ g = function(x,player,planets){
             thrustDown:false,
             thrust : 0,
 
-            drawSky : function (context) {
-                if(player.alt > 1500) return
 
-                player.alt = this.pos.stance(this.attratedBy.pos) - this.attratedBy.diameter
-                grd = context.createLinearGradient(150.000, 0.000, 150.000, 300.000);
-                var atmoAlpha = player.alt < 1 ? 1 : 1 - player.alt / 1500
-
-                // Add colors
-                grd.addColorStop(0.000, `rgba(17, 65, 117, ${atmoAlpha})`);
-                grd.addColorStop(1.000, `rgba(255, 141, 66, ${atmoAlpha})`);
-
-
-                context.fillStyle = grd
-                context.fillRect(0,0,c.width,c.height)
-            },
             move : function(delta){
 
                 //landed
@@ -584,30 +570,11 @@ g = function(x,player,planets){
         e.preventDefault()
     }
 
-    document.onmousedown = function(e) {
 
-        if(manover.state == 0 && state == 1) {
-            manover.state = 1
-        }
-        if(manover.state == 3 && state == 1) {
-            manover.state = 0
-        }
-    }
-
-    document.onmouseup = function() {
-        if(manover.state == 2) {
-            manover.state = 3
-        }
-    }
 
     function mouseToSpace() {
 
-        tools.screen = new v2d(c.width/2,c.height/2)
-        tools.mouse.setVector(mousePos)
-        tools.mouse.sub(tools.screen)
-        tools.cam.setVector(camera.pos)
-        tools.mouse.scale((1/nz)*10)
-        tools.cam.add(tools.mouse)
+
 
     }
 
@@ -650,68 +617,26 @@ g = function(x,player,planets){
         }
     }
 
-    document.onkeydown=function(k) {
-        if(k.keyCode==38 || k.keyCode==90){ /*up&z*/
-            player.thrustUp = true//player.thrust>=100 ? 100 : player.thrust++
-        }
-        if(k.keyCode==40 || k.keyCode==83){ /*down&s*/
-            player.thrustDown = true//player.thrust<=0 ? 0 : player.thrust-
-            player.thrustDown = true//player.thrust<=0 ? 0 : player.thrust-
-        }
-        if(k.keyCode==37 || k.keyCode==81){ /*left&q*/
-            player.left = true;
-        }
-        if(k.keyCode==39 || k.keyCode==68){ /*right&d*/
-            player.right = true
-        }
-        // zoom on o & p
-        if(k.keyCode == 34) {
-            nz = nz <= 0 ? 0 : nz / 2
-        }
 
-        if(k.keyCode == 33) {
-            nz = nz >= 1000 ? 1000 : nz * 2
-        }
-        if(k.keyCode == 32) {
-            if(!player.stages[0].isOn)
-                player.stage()
-        }
 
-        if(state == 1 && k.keyCode == 80) {
-            pause()
-            state = 4//PAUSE
-        } else if(state == 4 && k.keyCode == 80) {
-            state = 1
-            unpause()
-        }
+    function start() {
+        m.style.display = "none"
+        state = 1
+    }
+    function stop() {
+        j.style.display = "none"
+        state = 1;
     }
 
-    document.scroll = function(e) {
-        var d = e.wheelDelta
-        console.log(d   )
+    function pause() {
+        m.style.display = "inline"
+        m.innerHTML = "Paused"
+    }
+    function unpause() {
+        m.style.display = "none"
+        m.innerHTML = ""
     }
 
-
-    document.onmousemove = function(e) {
-        mousePos.x = e.clientX
-        mousePos.y = e.clientY
-    }
-
-
-    document.onkeyup=function(k) {
-        if(k.keyCode==38 || k.keyCode==90){ /*up&z*/
-            player.thrustUp = false
-        }
-        if(k.keyCode==40 || k.keyCode==83){ /*down&s*/
-            player.thrustDown = false
-        }
-        if(k.keyCode==37 || k.keyCode==81){ /*left&q*/
-            player.left = false;
-        }
-        if(k.keyCode==39 || k.keyCode==68){ /*right&d*/
-            player.right = false
-        }
-    }
 
 
 
@@ -752,14 +677,12 @@ g = function(x,player,planets){
         c.width^=0
         if(state==1) { // game
             drawUnstableStars(x)
-            player.drawSky(x)
 
 
             planets.forEach(function(planet) {
                 planet.draw(x)
             })
 
-            drawSun(x)
             player.draw(x)
             navBall(x)
             trajectory(x,delta)
@@ -780,25 +703,7 @@ g = function(x,player,planets){
  r ressources
  D distance from origin
  */
-m.onclick = start
-j.onclick = stop
-function start() {
-    m.style.display = "none"
-    state = 1
-}
-function stop() {
-    j.style.display = "none"
-    state = 1;
-}
 
-function pause() {
-    m.style.display = "inline"
-    m.innerHTML = "Paused"
-}
-function unpause() {
-    m.style.display = "none"
-    m.innerHTML = ""
-}
 
 function Planet(speed,diameter,parent,distanceMinFromParent,distanceMaxFromParent,angle,G,name, color){
     this.speed=speed
@@ -819,8 +724,8 @@ Planet.prototype.getSpeedVector = function() {
 }
 
 
-Planet.prototype.toString=function(){
-    return this.name,'|speed:'+this.speed.toString()+'|pos:'+this.pos.toString()
+Planet.prototype.toString = function(){
+    return this.name + ' | speed:' + this.speed.toString() + ' | pos:' + this.pos.toString()
 }
 
 
@@ -913,106 +818,27 @@ Planet.prototype.move=function(delta){
         Math.sin(this.angle)*(this.distanceMinFromParent-this.diameter))
 }
 
-Planet.prototype.   getFuturePosition=function(delta){
+Planet.prototype.getFuturePosition=function(delta){
     var angle = this.angle+delta*this.speed/100
     return new v2d(Math.cos(angle)*this.distanceMinFromParent,Math.sin(angle)*this.distanceMinFromParent)
 }
 
-function drawSun(x) {
-    if(nz < 0.04) {
-        x.drawImage(sprite, 60,180,40,40,c.width/2 - z(camera.pos.x),c.height/2 - z(camera.pos.y),40,40)
-    } else {
-
-
-        x.beginPath()
-        var skyDrg=x.createRadialGradient(sky.pos.x,sky.pos.y,10,sky.pos.x,sky.pos.y,z(sun.diameter));
-
-        skyDrg.addColorStop(0.000, 'rgba(255, 255, 255, 1.000)');
-        skyDrg.addColorStop(0.236, 'rgba(255, 224, 132, 1.000)');
-        skyDrg.addColorStop(0.488, 'rgba(234, 189, 12, 1.000)');
-        skyDrg.addColorStop(0.735, 'rgba(255, 120, 17, 1.000)');
-        skyDrg.addColorStop(0.994, 'rgba(255, 131, 73, 1.000)');
-        skyDrg.addColorStop(1.000, 'rgba(255, 255, 255, 0.95)');
-
-        // Fill with gradient
-        x.fillStyle=skyDrg;
-
-        x.arc(c.width/2-z(camera.pos.x),c.height/2-z(camera.pos.y),z(sun.diameter),0,7)
-        x.fill()
-        x.closePath()
-    }
-
-}
 
 function z(d){
     return (nz*d)/10
 }
 
 
-function drawSky() {
-
-}
-
 function drawStars(context2) {
-
-    context2.fillStyle = "rgb(18, 17, 28)"
-    context2.fillRect(0,0,c.width,c.height)
-
-    for(si in stars) {
-        s = stars[si]
-        context2.moveTo(s.pos.x,s.pos.y)
-
-        //context2.moveTo(s.pos.x,s.pos.y)
-        context2.fillStyle = '#aaaaaa'
-        context2.arc(s.pos.x,s.pos.y, s.intensity,0,7)
-
-
-        context2.fill()
-    }
 
 
 }
 function prepareStar() {
-    for(var i=0;index<111;index+=1){
-        stars.push({pos : new v2d(Math.floor(Math.random()*c.width), Math.floor(Math.random() * c.height)),intensity:Math.random()*0.9+0.4})
-    }
 
-    var colors = [
-        "#1B57C4", "#BC6DED", "#E63C58", "#ffffff", "#1B57C4"
-    ]
-
-    for(var i = 0;index<10; index+=1) {
-        starsU.push({pos : new v2d(Math.random() * c.width,Math.random() * c.height), color : colors[Math.floor(Math.random()*5)],intensity: Math.random()*0.9})
-    }
 }
+function drawSky(context) {
 
-
+}
 
 function drawUnstableStars(context3){
-
-    for(si in starsU) {
-        s = starsU[si]
-
-        context3.moveTo(s.pos.x,s.pos.y)
-        context3.fillStyle = s.color
-        context3.arc(s.pos.x,s.pos.y,s.intensity + Math.random()*0.5,0,7)
-
-
-        context3.fill()
-    }
-
-    sky.pos.setPoint(c.width/2+z(- camera.pos.x),c.height/2+z(- camera.pos.y))
-    var skyDrg=context3.createRadialGradient(sky.pos.x,sky.pos.y,10,sky.pos.x,sky.pos.y,300);
-
-    skyDrg.addColorStop(0.000, 'rgba(53, 58, 68, 1.000)');
-    skyDrg.addColorStop(0.589, 'rgba(68, 39, 39, 1.000)');
-    skyDrg.addColorStop(1.000, 'rgba(18, 17, 28, 0)');
-
-    // Fill with gradient
-    context3.fillStyle=skyDrg;
-    context3.fillRect(0,0,d.width,d.height);
 }
-
-
-
-g()
