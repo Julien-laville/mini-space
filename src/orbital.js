@@ -67,6 +67,10 @@ OrbitalMechanic2DMobile.prototype.calcTrajectory = function() {
 }
 
 
+OrbitalMechanic2DMobile.prototype.getV3d = function() {
+    return new THREE.Vector3(this.pos.x, this.pos.y, 0)
+}
+
 
 
 // tests
@@ -77,7 +81,7 @@ var attractors = [
     new OrbitalMechanic2DMobile(new v2d(0,0), 100,new v2d(0,0),new v2d(0,0)),
     new OrbitalMechanic2DMobile(new v2d(100,0), 100,new v2d(0,0),new v2d(0,0))
 ]
-
+/*
 var ship = new OrbitalMechanic2DMobile(new v2d(50,50), 0, new v2d(0,0), new v2d(0,0))
 ship.computeNewPos(attractors,16,[])
 console.log(    ship.pos    )
@@ -85,3 +89,5 @@ ship.computeNewPos(attractors,16,[])
 console.log(    ship.pos    )
 ship.computeNewPos(attractors,16,[])
 console.log(    ship.pos    )
+
+*/

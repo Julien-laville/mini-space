@@ -7,10 +7,10 @@ let camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHe
 let renderer = new THREE.WebGLRenderer()
 renderer.setSize(window.innerWidth, window.innerHeight, document.body.appendChild(renderer.domElement))
 
-
-
-camera.position.z = 100
-MissionLoader.load(scene)
+camera.position.z = 500
+let mission = MissionLoader.load(scene)
+let solarSystem = mission.planets
+let ship = mission.ship
 
 let now = performance.now()
 let delta = 0
@@ -23,18 +23,9 @@ function render() {
     renderer.render( scene, camera )
     now = performance.now()
 }
+
 render()
 
-
-
-function Ship() {
-    this.orbitalMechanic2DMobile = new OrbitalMechanic2DMobile(new v2d(), 0, new v2d(), new v2d())
-}
-
-
-Ship.prototype.move() {
-    this.orbitalMechanic2DMobile.getPo
-}
 
 /*
 PHYSIC_STEP = 10
