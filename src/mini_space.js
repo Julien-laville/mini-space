@@ -1,8 +1,25 @@
+let FOV = 90
+let FAR_DISTANCE = 1000
 
-missions = [
-    'soyouz'
-]
+let scene = new THREE.Scene()
+let camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, FAR_DISTANCE)
 
+let renderer = new THREE.WebGLRenderer()
+renderer.setSize(window.innerWidth, window.innerHeight, document.body.appendChild(renderer.domElement))
+
+
+
+camera.position.z = 100
+MissionLoader.load(scene)
+
+let now = new Date();
+function render() {
+    requestAnimationFrame( render )
+    renderer.render( scene, camera )
+}
+render()
+
+/*
 PHYSIC_STEP = 10
 POOL_SIZE = 400
 
@@ -20,69 +37,6 @@ for(var i = 0;index < POOL_SIZE; index++) {
     }
 }
 
-function v2d(x,y) {
-    this.x = x
-    this.y = y
-    this.tmp = 1;//for buff & swap
-}
-
-v2d.prototype.setPoint = function(x,y) {
-    this.x = x
-    this.y = y
-}
-
-
-v2d.prototype.setVector = function(v) {
-    this.x = v.x
-    this.y = v.y
-}
-
-v2d.prototype.X = function(o){
-    this.x=this.x*o.x;
-    this.y=this.y*o.y;
-}
-
-v2d.prototype.normalize = function() {
-    this.tmp = this.x;
-    this.x  = this.x / Math.hypot(this.x,this.y)
-    this.y = this.y / Math.hypot(this.tmp,this.y)
-}
-
-v2d.prototype.add = function(o){
-    this.x=this.x+o.x;
-    this.y=this.y+o.y;
-}
-
-v2d.prototype.sub = function(o){
-    this.x=this.x-o.x;
-    this.y=this.y-o.y;
-}
-
-v2d.prototype.scale = function(n){
-    this.x=this.x*n;this.y=this.y*n;
-}
-
-v2d.prototype.toString = function() {
-    return 'x:'+this.x+'|y:'+this.y
-}
-
-v2d.prototype.x = function() {
-    return this.x
-}
-
-v2d.prototype.y = function() {
-    return this.y
-}
-
-v2d.prototype.stance = function(o) {
-    return Math.sqrt(
-        (this.y-o.y)*(this.y-o.y)+
-        (this.x-o.x)*(this.x-o.x)
-    )
-}
-v2d.prototype.norm = function() {
-    return Math.hypot(this.x,this.y)
-}
 
 oldDate = new Date();
 nz = 4
@@ -102,7 +56,7 @@ g = function(x,player,planets){
     cpu =  {
         remaining : 0,
         glitchCharge : 0,
-        precision : 30,
+        precision : 30
     }
 
     land = function(planet, choc) {
@@ -125,9 +79,6 @@ g = function(x,player,planets){
         state = 3
     }
 
-    displayMission = function() {
-        state = 0
-    }
 
     state = 0;
 
@@ -842,3 +793,4 @@ function drawSky(context) {
 
 function drawUnstableStars(context3){
 }
+*/
