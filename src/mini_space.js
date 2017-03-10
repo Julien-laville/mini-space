@@ -12,12 +12,29 @@ renderer.setSize(window.innerWidth, window.innerHeight, document.body.appendChil
 camera.position.z = 100
 MissionLoader.load(scene)
 
-let now = new Date();
+let now = performance.now()
+let delta = 0
 function render() {
+    delta = performance.now() - now
+    
+    ship.move(delta)
+    
     requestAnimationFrame( render )
     renderer.render( scene, camera )
+    now = performance.now()
 }
 render()
+
+
+
+function Ship() {
+    this.orbitalMechanic2DMobile = new OrbitalMechanic2DMobile()
+}
+
+
+Ship.prototype.move() {
+    this.orbitalMechanic2DMobile.get
+}
 
 /*
 PHYSIC_STEP = 10

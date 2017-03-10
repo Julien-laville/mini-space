@@ -15,10 +15,6 @@ function OrbitalMechanic2DMobile(pos, G, speed, acc) {
     this.gravityV2d = new v2d(0,0)
 }
 
-
-OrbitalMechanic2DMobile. getP
-
-
 OrbitalMechanic2DMobile.prototype.getAttractor = function(attractors) {
     this.influentAttractor = attractors[0]
     this.influentAttracorForce = 0
@@ -35,7 +31,6 @@ OrbitalMechanic2DMobile.prototype.getAttractor = function(attractors) {
     }
 }
 
-
 OrbitalMechanic2DMobile.prototype.getGravityV2d = function(attractors) {
 
     // set influentAttracorForceNorm & influentAttracor
@@ -51,7 +46,7 @@ OrbitalMechanic2DMobile.prototype.getGravityV2d = function(attractors) {
 
 
 
-OrbitalMechanic2DMobile.prototype.computePosAt = function(attractors, deltaT, forces) {
+OrbitalMechanic2DMobile.prototype.computeNewPos = function(attractors, deltaT, forces) {
     // set gravityV2d
     this.getGravityV2d(attractors)
     this.force.setVector(this.gravityV2d)
@@ -64,7 +59,6 @@ OrbitalMechanic2DMobile.prototype.computePosAt = function(attractors, deltaT, fo
     this.pos.add(this.speed)
     
 }
-
 
 OrbitalMechanic2DMobile.prototype.calcTrajectory = function() {
     for(this.i = 0; i < 1000; i ++) {
@@ -85,9 +79,9 @@ var attractors = [
 ]
 
 var ship = new OrbitalMechanic2DMobile(new v2d(50,50), 0, new v2d(0,0), new v2d(0,0))
-ship.computePosAt(attractors,16,[])
+ship.computeNewPos(attractors,16,[])
 console.log(    ship.pos    )
-ship.computePosAt(attractors,16,[])
+ship.computeNewPos(attractors,16,[])
 console.log(    ship.pos    )
-ship.computePosAt(attractors,16,[])
+ship.computeNewPos(attractors,16,[])
 console.log(    ship.pos    )
