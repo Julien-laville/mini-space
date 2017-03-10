@@ -643,7 +643,7 @@ g = function(x,player,planets){
     }
     drawStars(x2)
     l()
-}
+}*/
 /*
  Planet
  s self rotate speed
@@ -654,7 +654,7 @@ g = function(x,player,planets){
  r ressources
  D distance from origin
  */
-
+/*
 
 function Planet(speed,diameter,parent,distanceMinFromParent,distanceMaxFromParent,angle,G,name, color){
     this.speed=speed
