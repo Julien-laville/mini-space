@@ -28,12 +28,12 @@ render()
 
 
 function Ship() {
-    this.orbitalMechanic2DMobile = new OrbitalMechanic2DMobile()
+    this.orbitalMechanic2DMobile = new OrbitalMechanic2DMobile(new v2d(), 0, new v2d(), new v2d())
 }
 
 
 Ship.prototype.move() {
-    this.orbitalMechanic2DMobile.get
+    this.orbitalMechanic2DMobile.getPo
 }
 
 /*
