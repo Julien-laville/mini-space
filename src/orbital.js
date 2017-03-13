@@ -17,8 +17,6 @@ function OrbitalMechanic2DMobile(pos, G, speed, acc) {
 
 OrbitalMechanic2DMobile.prototype.getAttractor = function(attractors) {
     this.influentAttractor = attractors[0]
-    this.influentAttracorForce = 0
-    
     for(this.i = 0; this.i < attractors.length; this.i++) {
         this.attractor = attractors[this.i]
         this.stance = this.pos.stance(this.attractor.pos)
@@ -27,7 +25,7 @@ OrbitalMechanic2DMobile.prototype.getAttractor = function(attractors) {
         if(this.influentAttracorForceNorm < this.forceNorm) {
             this.influentAttracorForceNorm = this.forceNorm
             this.influentAttractor = this.attractor
-        }        
+        }
     }
 }
 
@@ -36,10 +34,9 @@ OrbitalMechanic2DMobile.prototype.getGravityV2d = function(attractors) {
     // set influentAttracorForceNorm & influentAttracor
     this.getAttractor(attractors)
     
-    this.stance = this.pos.stance(this.influentAttractor.pos)
-    
-    this.gravityV2d.setVector(this.pos)
-    this.gravityV2d.sub(this.influentAttractor.pos)
+
+    this.gravityV2d.setVector(this.influentAttractor.pos)
+    this.gravityV2d.sub(this.pos)
     this.gravityV2d.normalize()
     this.gravityV2d.scale(this.influentAttracorForceNorm)
 }   
@@ -70,24 +67,3 @@ OrbitalMechanic2DMobile.prototype.calcTrajectory = function() {
 OrbitalMechanic2DMobile.prototype.getV3d = function() {
     return new THREE.Vector3(this.pos.x, this.pos.y, 0)
 }
-
-
-
-// tests
-
-
-
-var attractors = [
-    new OrbitalMechanic2DMobile(new v2d(0,0), 100,new v2d(0,0),new v2d(0,0)),
-    new OrbitalMechanic2DMobile(new v2d(100,0), 100,new v2d(0,0),new v2d(0,0))
-]
-/*
-var ship = new OrbitalMechanic2DMobile(new v2d(50,50), 0, new v2d(0,0), new v2d(0,0))
-ship.computeNewPos(attractors,16,[])
-console.log(    ship.pos    )
-ship.computeNewPos(attractors,16,[])
-console.log(    ship.pos    )
-ship.computeNewPos(attractors,16,[])
-console.log(    ship.pos    )
-
-*/

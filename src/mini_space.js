@@ -17,7 +17,7 @@ let delta = 0
 function render() {
     delta = performance.now() - now
     
-    ship.move(delta)
+    ship.move(delta, solarSystem)
     
     requestAnimationFrame( render )
     renderer.render( scene, camera )

@@ -21,6 +21,7 @@ MissionLoader.load = function(scene){
     
     sun.pos = new v2d(0,0)
     sun.G = 100
+    sun.name = "SUN"
     return {planets : [sun], ship : ship}
         
 }

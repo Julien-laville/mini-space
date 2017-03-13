@@ -5,7 +5,7 @@ function Ship(pos, mesh) {
 }
 
 
-Ship.prototype.move = function(delta) {
+Ship.prototype.move = function(delta, solarSystem) {
     this.orbitalMechanic2DMobile.computeNewPos(solarSystem, delta,[])
     this.mesh.position.set(this.orbitalMechanic2DMobile.pos.x, this.orbitalMechanic2DMobile.pos.y, 0)
 }
