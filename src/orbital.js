@@ -1,9 +1,8 @@
-function OrbitalMechanic2DMobile(pos, G, speed, acc) {
+function OrbitalMechanic2DMobile(pos, G, speed) {
     this.pos = pos
     this.G = G
     this.speed = speed
-    this.acc = acc
-    
+
     this.stance = 0
     this.forceNorm = 0
     this.force = new v2d(0,0)
@@ -11,7 +10,6 @@ function OrbitalMechanic2DMobile(pos, G, speed, acc) {
     this.attractor = 0
     this.influentAttracorForceNorm = 0  
     this.influentAttractor = 0
-    this.gravityNorm = 0
     this.gravityV2d = new v2d(0,0)
 }
 
@@ -52,7 +50,8 @@ OrbitalMechanic2DMobile.prototype.computeNewPos = function(attractors, deltaT, f
     }
     this.force.scale(deltaT)
     this.speed.add(this.force)
-    this.speed.scale(deltaT)
+    //this.speed.scale(deltaT)
+    console.log(deltaT)
     this.pos.add(this.speed)
     
 }
